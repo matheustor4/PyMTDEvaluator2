@@ -11,21 +11,21 @@ PyMTDEvaluator docker container requires a XWindow server.
 
 **Installation Linux-specific**
 
-1) Download PyMTDEvaluator2-DockerImage.tar: Image available at: https://drive.google.com/file/d/1Qa7p5Z059ey4D0ApJX7RsHkUAAlH3TJZ/view?usp=sharing
+- Download PyMTDEvaluator2-DockerImage.tar: Image available at: https://drive.google.com/file/d/1Qa7p5Z059ey4D0ApJX7RsHkUAAlH3TJZ/view?usp=sharing
 
-2) Loading PyMTDEvaluator image on your Docker platform
+- Loading PyMTDEvaluator image on your Docker platform
 
 	sudo docker load < PyMTDEvaluator2-DockerImage.tar
 
-3) Checking images listing
+- Checking images listing
 
 	sudo docker images 
 
-4) Assign a tag to the downloaded image (replace <img-id> with the Image id)
+- Assign a tag to the downloaded image (replace <img-id> with the Image id)
 
 	sudo docker tag <img-id> pymtdevaluator
 
-Jump to your Operating System:
+- Jump to your Operating System:
 
 #Starting xhost
 	
