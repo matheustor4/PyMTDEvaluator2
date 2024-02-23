@@ -1,9 +1,9 @@
 # PyMTDEvaluator2
 Updated version of PyMTDEvaluator with support for Multi-Criteria Decision Making Methods
 
-**Cite us**
+## Cite us
 
-PyMTDEvaluator was first published in 2021 IEEE 32nd International Symposium on Software Reliability Engineering (ISSRE). If you use the tool, please cite the following publication.
+PyMTDEvaluator was first published in [2021 IEEE 32nd International Symposium on Software Reliability Engineering (ISSRE)](https://ieeexplore.ieee.org/abstract/document/9700355). If you use the tool, please cite the following publication.
 
 	@inproceedings{torquato2021pymtdevaluator,
   	title={Pymtdevaluator: A tool for time-based moving target defense evaluation: Tool description paper},
@@ -16,7 +16,7 @@ PyMTDEvaluator was first published in 2021 IEEE 32nd International Symposium on 
 
 
 
-**Installation**
+### Installation
 
 PyMTDEvaluator depends on some libraries described in the paper. 
 
@@ -69,7 +69,7 @@ Remember that the generated files will be stored inside the container.
 
 We recommend to start a new container for each round of evaluations. 
 
-**Errors while using MCDM methods:**
+## Errors while using MCDM methods:
 
 In general, errors occur when the parameters present anomalies (e.g., short time for attack success and late VM migrations, etc). Some examples are below. In case you find errors like: "raise ValueError(f"The data {values} doesn't look like a ranking")", please check your parameters. 
 
