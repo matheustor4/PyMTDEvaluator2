@@ -1,6 +1,23 @@
 # PyMTDEvaluator2
 Updated version of PyMTDEvaluator with support for Multi-Criteria Decision Making Methods
 
+**Cite us**
+
+PyMTDEvaluator was first published in 2021 IEEE 32nd International Symposium on Software Reliability Engineering (ISSRE). If you use the tool, please cite the following publication.
+
+	@inproceedings{torquato2021pymtdevaluator,
+  	title={Pymtdevaluator: A tool for time-based moving target defense evaluation: Tool description paper},
+  	author={Torquato, Matheus and Maciel, Paulo and Vieira, Marco},
+  	booktitle={2021 IEEE 32nd International Symposium on Software Reliability Engineering (ISSRE)},
+  	pages={357--366},
+  	year={2021},
+  	organization={IEEE}
+	}
+
+
+
+**Installation**
+
 PyMTDEvaluator depends on some libraries described in the paper. 
 
 If you are a Docker container user, please follow the recommendations below.
@@ -63,4 +80,5 @@ In general, errors occur when the parameters present anomalies (e.g., short time
 2) Errors in shorter evaluations without MTD action.
 
 	Evaluation time shorter than the movement trigger leads to cost=0. Therefore, the MCDM method will produce errors in the evaluation. 
+
 
