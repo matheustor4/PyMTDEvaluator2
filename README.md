@@ -28,12 +28,15 @@ PyMTDEvaluator docker container requires a XWindow server.
 Jump to your Operating System:
 
 #Starting xhost
+	
 	xhost +local:root
 
 #Running docker container:
+
 	sudo docker run -it --rm     --env=DISPLAY     --env=QT_X11_NO_MITSHM=1     --volume=/tmp/.X11-unix:/tmp/.X11-unix:rw     pymtdevaluator
 
 #Inside the container
+
 	python3 PyMTDEvaluator2.py
 
 --NOTE
@@ -44,6 +47,7 @@ Remember that the generated files will be stored inside the container.
 **For results extraction:**
 
 	docker exec <container-ID> ./zipResults.sh
+ 
 	docker cp <container-ID>:/Results.zip .
 
 We recommend to start a new container for each round of evaluations. 
