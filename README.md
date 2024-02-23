@@ -33,7 +33,7 @@ $ xhost +local:root
 #Running docker container:
 $ sudo docker run -it --rm     --env=DISPLAY     --env=QT_X11_NO_MITSHM=1     --volume=/tmp/.X11-unix:/tmp/.X11-unix:rw     pymtdevaluator
 
-# python3 PyMTDEvaluator2.py
+#python3 PyMTDEvaluator2.py
 
 --NOTE
 
