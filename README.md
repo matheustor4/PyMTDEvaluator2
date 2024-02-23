@@ -1,6 +1,43 @@
 # PyMTDEvaluator2
 Updated version of PyMTDEvaluator with support for Multi-Criteria Decision Making Methods
 
+PyMTDEvaluator depends on some libraries described in the paper. 
+
+If you are a Docker container user, please follow the recommendations below.
+
+PyMTDEvaluator docker container requires a XWindow server. 
+- Xwindow server is usually available on most Linux OSes.
+- For windows and mac, the user may select the preferred XWindow server. 
+
+**Installation Linux-specific**
+
+1) Download PyMTDEvaluator2-DockerImage.tar: Image available at: https://drive.google.com/file/d/1Qa7p5Z059ey4D0ApJX7RsHkUAAlH3TJZ/view?usp=sharing
+
+2) Loading PyMTDEvaluator image on your Docker platform
+
+sudo docker load < PyMTDEvaluator2-DockerImage.tar
+
+3) Checking images listing
+
+sudo docker images 
+
+4) Assign a tag to the downloaded image (replace <img-id> with the Image id)
+
+sudo docker tag <img-id> pymtdevaluator
+
+Jump to your Operating System:
+
+#Starting xhost
+$ xhost +local:root
+
+#Running docker container:
+$ sudo docker run -it --rm     --env=DISPLAY     --env=QT_X11_NO_MITSHM=1     --volume=/tmp/.X11-unix:/tmp/.X11-unix:rw     pymtdevaluator
+
+# python3 PyMTDEvaluator2.py
+
+--NOTE
+
+Remember that the generated files will be stored inside the container.
 
 
 **For results extraction:**
