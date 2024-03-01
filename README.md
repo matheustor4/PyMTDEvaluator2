@@ -24,7 +24,7 @@ If you are a Docker container user, please follow the recommendations below.
 
 PyMTDEvaluator docker container requires a XWindow server. 
 - Xwindow server is usually available on most Linux OSes.
-- For windows and mac, the user may select the preferred XWindow server. 
+- For Windows and Mac, the user may select the preferred XWindow server. 
 
 **Installation Linux-specific**
 
@@ -67,15 +67,15 @@ Remember that the generated files will be stored inside the container.
  
 	docker cp <container-ID>:/Results.zip .
 
-We recommend to start a new container for each round of evaluations. 
+We recommend starting a new container for each round of evaluations. 
 
 ## Errors while using MCDM methods:
 
-In general, errors occur when the parameters present anomalies (e.g., short time for attack success and late VM migrations, etc). Some examples are below. In case you find errors like: "raise ValueError(f"The data {values} doesn't look like a ranking")", please check your parameters. 
+In general, errors occur when the parameters present anomalies (e.g., short time for attack success and late VM migrations, etc). Some examples are below. In case you find errors like: "raise ValueError(f"The data {values} doesn't look like a ranking")", please check your parameters. If you check, and your parameters are ok, try to run the tool with the same parameters again. 
 
 1) Zero value for any of the criteria
 
-	At this version of PyMTDEvaluator, we need to have at least 1% of weight for the each of the criteria. Zero values cause errors in the data transformation for the evaluation. 
+	At this version of PyMTDEvaluator, we need to have at least 1% of weight for each of the criteria. Zero values cause errors in the data transformation for the evaluation. 
 
 2) Errors in shorter evaluations without MTD action.
 
