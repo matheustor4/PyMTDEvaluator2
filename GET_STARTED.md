@@ -9,3 +9,7 @@ PyMTDEvaluator features three interface options. The users can select their pref
 They are Classical, Modern, and Upload XML file.
 
 ![image](https://github.com/user-attachments/assets/7726bfc5-b493-4420-b8bb-bbff104910cc)
+
+# Classical interface
+
+![image](https://github.com/user-attachments/assets/65f9fd44-7e2c-4d4e-a6f8-a99d20226dac)
