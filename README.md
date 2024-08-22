@@ -70,6 +70,8 @@ Remember that the generated files will be stored inside the container.
 
 We recommend starting a new container for each round of evaluations. 
 
+After PyMTDEvaluator installation, follow the [Get Started](https://github.com/matheustor4/PyMTDEvaluator2/blob/main/GET_STARTED.md#pymtdevaluator-20) guide for more instructions on how to use the tool. 
+
 ## Errors while using MCDM methods:
 
 In general, errors occur when the parameters present anomalies (e.g., short time for attack success and late VM migrations, etc). Some examples are below. In case you find errors like: "raise ValueError(f"The data {values} doesn't look like a ranking")", please check your parameters. If you check, and your parameters are ok, try to run the tool with the same parameters again. 
