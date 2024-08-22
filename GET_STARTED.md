@@ -31,3 +31,17 @@ Consists of a simple system dialog to feed the tool directly (i.e., without need
 # Parameters definition
 
 `Downtime per movement (min)` - ...
+
+# Understanding PyMTDEvaluator output
+
+
+
+# Illustrative case examples
+
+# Further information and bug reporting
+
+Feel free to contact matheustor4 \dot\ professor \at\ gmail \dot\ com for more information and bug reporting. 
+
+
+
+
