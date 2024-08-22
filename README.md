@@ -29,33 +29,38 @@ PyMTDEvaluator docker container requires a XWindow server.
 
 **Installation Linux-specific**
 
-#Download PyMTDEvaluator2-DockerImage.tar: Image available at: https://drive.google.com/file/d/1Qa7p5Z059ey4D0ApJX7RsHkUAAlH3TJZ/view?usp=sharing
+1. Download PyMTDEvaluator2-DockerImage.tar: Image available at: https://drive.google.com/file/d/1Qa7p5Z059ey4D0ApJX7RsHkUAAlH3TJZ/view?usp=sharing
 
-#Loading PyMTDEvaluator image on your Docker platform
-
+2. Loading PyMTDEvaluator image on your Docker platform
+   
+	```
 	sudo docker load < PyMTDEvaluator2-DockerImage.tar
+ 	```
 
-#Checking images listing
+3. Checking images listing
+	```
+	sudo docker images
+ 	```
 
-	sudo docker images 
-
-#Assign a tag to the downloaded image (replace <img-id> with the Image id)
-
+4. Assign a tag to the downloaded image (replace <img-id> with the Image id)
+	```
 	sudo docker tag <img-id> pymtdevaluator2
-
-#Jump to your Operating System:
-
-#Starting xhost
-	
+	```
+ 
+5. In your Operating System, start  xhost
+	```
 	xhost +local:root
+	```
 
-#Running docker container:
-
+6. Running docker container:
+	```
 	sudo docker run -it --rm     --env=DISPLAY     --env=QT_X11_NO_MITSHM=1     --volume=/tmp/.X11-unix:/tmp/.X11-unix:rw     pymtdevaluator2
-
-#Inside the container
-
+	```
+ 
+ 7. Inside the container
+	```
 	python3 PyMTDEvaluator2.py
+	```
 
 --NOTE
 
@@ -65,8 +70,9 @@ Remember that the generated files will be stored inside the container.
 **For results extraction:**
 
 	docker exec <container-ID> ./zipResults.sh
- 
-	docker cp <container-ID>:/Results.zip .
+. 
+	
+ 	docker cp <container-ID>:/Results.zip .
 
 We recommend starting a new container for each round of evaluations. 
 
@@ -85,3 +91,4 @@ In general, errors occur when the parameters present anomalies (e.g., short time
 	Evaluation time shorter than the movement trigger leads to cost=0. Therefore, the MCDM method will produce errors in the evaluation. 
 
 
+PyMTDEvaluator MCDM methods may remove some invalid alternatives from the evaluation to avoid the aforementioned errors. In this situation, PyMTDEvaluator output displays which alternatives were excluded from the analysis process. 
