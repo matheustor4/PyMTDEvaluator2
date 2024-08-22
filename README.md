@@ -1,5 +1,6 @@
 # PyMTDEvaluator2
-Updated version of PyMTDEvaluator with support for Multi-Criteria Decision Making Methods
+
+PyMTDEvaluator is a tool for time-based Moving Target Defense evaluation. The 2.0 version provides support for Multi-Criteria Decision Making Methods and improved graphical user interface.
 
 ## Cite us
 
