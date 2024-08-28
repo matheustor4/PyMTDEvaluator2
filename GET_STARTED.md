@@ -1,4 +1,4 @@
-# PyMTDEvaluator 2.0
+v# PyMTDEvaluator 2.0
 
 PyMTDEvaluator is a tool for time-based Moving Target Defense (MTD) evaluation. The 2.0 version updates the previous one by providing support for Multi-Criteria Decision Making methods and also a improved graphical user interface. The manual below will guide you after [PyMTDEvaluator installation.](https://github.com/matheustor4/PyMTDEvaluator2/blob/main/README.md#installation) 
 
@@ -30,7 +30,33 @@ Consists of a simple system dialog to feed the tool directly (i.e., without need
 
 # Parameters definition
 
+We present the information for each field of PyMTDEvaluator below.
+
 `Downtime per movement (min)` - ...
+
+`Cost per movement ($)` - ...
+
+`Movement Trigger (h)` - ...
+
+`Time for attack success (h)` - ...
+
+`Evaluation time (h)` - ...
+
+## Experiment
+
+PyMTDEvaluator also features the *Experiment* option. The *Experiment* consists of conducting a series of evaluations varying the desired parameters. 
+
+*Experiment - Movement Trigger* feature performs evaluations varying `Movement Trigger` parameter. It is helpful to compare different scheduling of MTD actions. The user selects the minimum value (`Movement Trigger (h) - MIN`), the maximum value (`Movement Trigger (h) - MAX`), and the step/increment (`Movement Trigger (h) - Step`). 
+
+The same idea applies in the context of *Experiment - Time for attack success*. It will produce results from a series of evaluations varying `Time for attack success` parameter. It is useful to compare the behavior of the MTD considering different attack rates. For example, supposing heavy or light DoS, or even attacker with different techinical abilities.
+
+The user can run both experiments in the same PyMTDEvaluator run. In this scenario, the tool will produce results for every combination of the selected experiment parameters. 
+
+## Multi-Criteria Decision Making
+
+The Multi-Criteria Decision Making (MCDM) feature performs the comparison of the scenarios computed in a *Experiment* evaluation. It is possible to combine different scenarios in PyMTDEvaluator (i.e., merging results of multiple runs of the tool). However, **the MDCM only considers the current scenario, not the previous ones**. The "historical" MCDM is a intended feature for the upcoming version of the tool.
+
+In PyMTDEvaluator, the weights are measured in percentage. This way, the sum of the weights should be equal do 100. The weights represent the importance assigned to each metric. 
 
 # Understanding PyMTDEvaluator output
 
