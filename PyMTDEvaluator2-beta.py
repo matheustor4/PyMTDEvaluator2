@@ -1,34 +1,22 @@
 import skcriteria
-from skcriteria import DecisionMatrix
-from skcriteria.preprocessing.scalers import MaxScaler, MinMaxScaler
 from skcriteria.agg import simple
 from skcriteria.preprocessing import invert_objectives, scalers
-from skcriteria.agg import similarity # here lives TOPSIS
-from skcriteria.pipeline import mkpipe # this function is for create pipelines
-#from skcriteria.madm import closeness, simple
-#import skcriteria.madm.closeness 
-#import skcriteria.madm.simple
+from skcriteria.agg import similarity 
+from skcriteria.pipeline import mkpipe 
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 import random
-
 import math
-import csv
 import simpy                            
 import numpy as np
 import scipy.stats
-import sys
-import subprocess
 from decimal import *
 import time
-import io
 from tkinter import *
 from tkinter import DISABLED
-from tkinter import messagebox
 from tkinter import ttk
 from tkinter import scrolledtext
-import os
 from matplotlib.font_manager import FontProperties
 import time
 from reportlab.lib.enums import TA_JUSTIFY
@@ -36,24 +24,36 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
+from tqdm.tk import tqdm
+from tktooltip import ToolTip
+import sys
+import customtkinter as ctk
+import tkinter as tk
+from customtkinter import filedialog
+import xml.etree.ElementTree as ET
+ctk.set_appearance_mode("dark") 
+# Supported themes : green, dark-blue, blue
+ctk.set_default_color_theme("green")   
 
 
 class Scenario():
     
-    def __init__(self, trigger, availability, cost, capacity, pas):
+    def __init__(self, trigger, availability, cost, capacity, pas, ttas):
         self.trigger = trigger
         self.availability = availability
         self.cost = cost
         self.capacity = capacity
         self.pas = pas
+        self.ttasScn = ttas
     
     def printScenario(self):
         print("Scenario results")
-        print("Trigger" + str(self.trigger))
-        print("Availability" + str(self.availability))
-        print("Cost" + str(self.cost))
-        print("Capacity" + str(self.capacity))
-        print("Probability of Attack Success" + str(self.pas))
+        print("Trigger " + str(self.trigger))
+        print("Time for attack success " + self.ttasScn)
+        print("Availability " + str(self.availability))
+        print("Cost " + str(self.cost))
+        print("Capacity " + str(self.capacity))
+        print("Probability of Attack Success " + str(self.pas))
     
 
 
@@ -69,11 +69,25 @@ class Mcdm():
         self.labels = []
         self.aux = []
         self.finalResult = ""
+        self.errorStringMCDMInclusion = ""
+        self.internalFlagMCDM = False;
+
+    def checkMCDMFlag(self):
+        
+        if self.availWeight == 0 and self.costWeight == 0 and self.capacityWeight == 0 and self.secWeight== 0 :
+            self.internalFlagMCDM = False
+        else:
+            self.internalFlagMCDM = True
+
+
+
+
 
     def prepareData(self):
         
         for i in range(len(self.scenarios)):
-            self.labels.append(self.scenarios[i].trigger)
+            scenarioLabel = "Tgr " + str(self.scenarios[i].trigger) + " Ttas " + str(self.scenarios[i].ttasScn)
+            self.labels.append(scenarioLabel)
             self.aux.append(self.scenarios[i].availability)
             self.aux.append(self.scenarios[i].cost)
             self.aux.append(self.scenarios[i].capacity)
@@ -84,92 +98,113 @@ class Mcdm():
 
 
     def includeScenario(self, scenario):
-        self.scenarios.append(scenario)
+        #print("This is the scenario");
+        #scenario.printScenario();
+        if(scenario.cost > 0 and scenario.availability > 0 and scenario.capacity > 0 and scenario.pas > 0):
+            self.scenarios.append(scenario)
+        else:
+            self.errorStringMCDMInclusion = self.errorStringMCDMInclusion + "\n MCDM Engine ---- The following scenario was excluded from MCDM (Value=0) \n Trigger =  " 
+            self.errorStringMCDMInclusion = self.errorStringMCDMInclusion + str(scenario.trigger) + " Time For attack success " +  str(scenario.ttasScn) + "\n"       
         #print(self.scenarios)
         
     def runMcdm(self):
         
-        self.finalResult = ""
-       
-        self.prepareData()
+        self.checkMCDMFlag();
         
-        objectives = [max, min, max, min]
+        if self.internalFlagMCDM:
+            self.finalResult = ""
+            self.prepareData()
         
+            objectives = [max, min, max, min]
         
+            print("Avail " + str(self.availWeight) + " Cost " + str(self.costWeight) + " cap " + str(self.capacityWeight) + ' sec ' + str(self.secWeight)) 
         
-        dm1 = skcriteria.mkdm(self.data, objectives,
+            if (len(self.scenarios)> 1) :
+                dm1 = skcriteria.mkdm(self.data, objectives,
                               alternatives=self.labels,
                               weights=[self.availWeight, self.costWeight, self.capacityWeight, self.secWeight],
                               criteria=["Availability", "Cost", "Capacity", "Prob. of attk. success"])
         
-        #print(dm1)
-        
-        inverter = invert_objectives.InvertMinimize()
-
-        dmt = inverter.transform(dm1)
-        
-        print("Original results")
-        self.finalResult=self.finalResult + "Original results \n"
-        
-        print(dmt)
-        self.finalResult=self.finalResult + str(dmt) + "\n"
-        
-        scaler = scalers.SumScaler(target="both")
-        dmt = scaler.transform(dmt)
-        
-        print("Transformed results")
-        self.finalResult=self.finalResult + "Transformed results \n"
+            #print(dm1)
       
-        print(dmt)
-        self.finalResult=self.finalResult + str(dmt) + "\n"
+                inverter = invert_objectives.InvertMinimize()
+
+                dmt = inverter.transform(dm1)
+                print("Original results")
+                self.finalResult=self.finalResult + "Original results \n"
+                print(dmt)
+                self.finalResult=self.finalResult + str(dmt) + "\n"
+                scaler = scalers.SumScaler(target="both")
+                dmt = scaler.transform(dmt)
         
-        dec = simple.WeightedSumModel()
+                print("Transformed results")
+                self.finalResult=self.finalResult + "Transformed results \n"
+      
+                print(dmt)
+                self.finalResult=self.finalResult + str(dmt) + "\n"
         
-        rank = dec.evaluate(dmt)
+                dec = simple.WeightedSumModel()
         
-        print("------------------")
-        self.finalResult=self.finalResult + "------------------\n"
+                rank = dec.evaluate(dmt)
+        
+                print("------------------")
+                self.finalResult=self.finalResult + "------------------\n"
 
         
-        print("Results Weighted Sum Model")
-        self.finalResult=self.finalResult + "Results Weighted Sum Model \n"
+                print("Results Weighted Sum Model")
+                self.finalResult=self.finalResult + "Results Weighted Sum Model \n"
         
         
-        print(rank)
-        self.finalResult=self.finalResult + str(rank)+ "\n"
+                print(rank)
+                self.finalResult=self.finalResult + str(rank)+ "\n"
         
-        print("-----------------")
-        self.finalResult=self.finalResult + "------------------\n"
+                print("-----------------")
+                self.finalResult=self.finalResult + "------------------\n"
         
-        pipe = mkpipe(
-            invert_objectives.NegateMinimize(),
-            scalers.VectorScaler(target="matrix"), # this scaler transform the matrix
-            scalers.SumScaler(target="weights"), # and this transform the weights
-            similarity.TOPSIS(),)
+                pipe = mkpipe(
+                    invert_objectives.NegateMinimize(),
+                    scalers.VectorScaler(target="matrix"), # this scaler transform the matrix
+                    scalers.SumScaler(target="weights"), # and this transform the weights
+                    similarity.TOPSIS(),)
         
-        rank = pipe.evaluate(dmt)
-        print("Results TOPSIS")
-        self.finalResult=self.finalResult + "Results TOPSIS \n"
+                rank = pipe.evaluate(dmt)
+                print("Results TOPSIS")
+                self.finalResult=self.finalResult + "Results TOPSIS \n"
         
-        print(rank)
-        self.finalResult=self.finalResult + str(rank) + "\n"
+                print(rank)
+                self.finalResult=self.finalResult + str(rank) + "\n"
        
-        print(rank.e_)
-        self.finalResult=self.finalResult + str(rank.e_) + "\n"
+                print(rank.e_)
+                self.finalResult=self.finalResult + str(rank.e_) + "\n"
         
-        print("Ideal:", rank.e_.ideal)
-        self.finalResult=self.finalResult + "Ideal:" + str(rank.e_.ideal) + "\n"
+                print("Ideal:", rank.e_.ideal)
+                self.finalResult=self.finalResult + "Ideal:" + str(rank.e_.ideal) + "\n"
         
-        print("Anti-Ideal:", rank.e_.anti_ideal)
-        self.finalResult=self.finalResult + "Anti-Ideal:" + str(rank.e_.anti_ideal) + "\n"
+                print("Anti-Ideal:", rank.e_.anti_ideal)
+                self.finalResult=self.finalResult + "Anti-Ideal:" + str(rank.e_.anti_ideal) + "\n"
                
-        print("Similarity index:", rank.e_.similarity)
-        self.finalResult=self.finalResult + "Similarity index:" + str(rank.e_.similarity) + "\n"
+                print("Similarity index:", rank.e_.similarity)
+                self.finalResult=self.finalResult + "Similarity index:" + str(rank.e_.similarity) + "\n"
+            
+            else:
+                if(len(self.scenarios)>0):
+                    print("MCDM Engine ---- ERROR: only one scenario left in MCDM after data validation")
+                    self.finalResult=self.finalResult + "\n MCDM Engine ---- ERROR: only one scenario left in MCDM after data validation  \n"
+                    self.finalResult=self.finalResult + "Trigger " + str(self.scenarios[0].trigger) + " Availability " + str(self.scenarios[0].availability) + " Cost " + str(self.scenarios[0].cost)
+                    self.finalResult=self.finalResult + " Capacity " + str(self.scenarios[0].capacity) + " Probability of Attack Success " + str(self.scenarios[0].pas) + " \n" 
+                else:
+                    print("MCDM Engine ---- ERROR: No scenarios left after data validation")
+                    self.finalResult=self.finalResult + "\n MCDM Engine ---- ERROR: No scenarios left after data validation \n ----------- \n"
 
+        else:
+            print("Evaluation without MCDM")
+            self.finalResult=self.finalResult + "\n Evaluation without MCDM \n ----------- \n"
         
 
     def getResults(self):
-        return self.finalResult
+        finalStringResult = self.errorStringMCDMInclusion + self.finalResult
+        self.errorStringMCDMInclusion = ""
+        return finalStringResult
         
        
 
@@ -307,12 +342,15 @@ class UserInterface():
         self.counter = 0
         self.counter2 = 0
         self.finalSummary="PyMTDEvaluator - Summary of Results \n +++++++++++++++++++++++++++ \n Scenario 0 \n \n ";
-        self.markers = ['o', 'v', '1', '8', 'P', '*', 'D', '|', 4, '$a$', '.', '^', '2', 's', 'X', 'd', '+', '_', 5, '$b$', ',', '>', '3', 'p', 'x', 0, 6, '$c$', '<', '4', 'h', 2, 7, '$d$', 'H', '$e$','$f$', '$r$', '$u$', '$m$']
+        self.markers = ['o', 'v', '1', '8', 'P', '*', 'D', '|', 4, '$a$', '.', '^', '2', 's', 'X', 'd', '+', '_', 5, '$b$', ',', '>', '3', 'p', 'x', 0, 6, '$c$', '<', '4', 'h', 2, 7, '$d$', 'H', '$e$','$f$', '$r$', '$u$', '$m$', 1, 3, 8, 9, 10, 11, 'o', 'v', '1', '8', 'P', '*', 'D', '|', 4, '$a$', '.', '^', '2', 's', 'X', 'd', '+', '_', 5, '$b$', ',', '>', '3', 'p', 'x', 0, 6, '$c$', '<', '4', 'h', 2, 7, '$d$', 'H', '$e$','$f$', '$r$', '$u$', '$m$']
         self.linestyle = ['solid', 'dashed', 'dotted']
         self.colors = ['black', 'blue', 'gray',  'red', 'yellow', 'green', 'orange', 'purple', 'pink', 'brown']
         self.countEval = 0;
         self.pdfFlag = False;
         self.mcdm = Mcdm(0,0,0,0)
+        self.interfaceSelectionMain = 0;
+
+        
 
     def makeform(self, root, fields):
         entries = {}
@@ -325,6 +363,9 @@ class UserInterface():
             lab.pack(side=LEFT)
             ent.pack(side=RIGHT, expand=YES, fill=X)
             entries[field] = ent
+        
+        
+
         return entries
 
 
@@ -557,12 +598,13 @@ class UserInterface():
         window.update()
 
         
-
+    def notifyProgressBar(self, _progress):
+        print(_progress);
+        
 
     def runEvaluation(self, entries, entriesExp, entriesExp2, entriesMCDM):
         
         
-       
         downtimePerMov = float(entries['Downtime per movement (min)'].get())/60
         costPerMovement = float(entries['Cost per movement ($)'].get())
         evalTime = int(entries['Evaluation Time (h)'].get())
@@ -572,10 +614,21 @@ class UserInterface():
             pasWeight = float(entriesMCDM['Probability of attack success (%)'].get())/100
             capacityWeight = float(entriesMCDM['Capacity (%)'].get())/100
             costWeight = float(entriesMCDM['Cost (%)'].get())/100
-            self.mcdm = Mcdm(availWeight, costWeight, capacityWeight, pasWeight)
-            print("MCDM true")
+
+            if(self.flag2):
+                if(self.flag):
+                    self.mcdm = Mcdm(0,0,0,0)
+                    print("MCDM false")
+                    print("Single evaluation - No scenarios for comparison")
+                else:
+                    self.mcdm = Mcdm(availWeight, costWeight, capacityWeight, pasWeight)
+                    print("MCDM true")
+            else:
+                self.mcdm = Mcdm(availWeight, costWeight, capacityWeight, pasWeight)
+                print("MCDM true")
+
         else:
-            self.mcdm = Mcdm(25,25,25,25)
+            self.mcdm = Mcdm(0,0,0,0)
             print("MCDM false")
         
         if(self.flag2):
@@ -584,7 +637,7 @@ class UserInterface():
                 timeForAtkSucPhase = float(entries['Time for attack success (h)'].get())
                 mtdSched = float(entries['Movement Trigger (h)'].get())
                 mtdSolver = TransientEvaluator(downtimePerMov, costPerMovement, mtdSched, timeForAtkSucPhase, evalTime, self.countEval)
-                mtdSolver.run()
+                mtdSolver.run(1,1)
                 self.resultsAvailability.append(mtdSolver.getAvailability())
                 self.resultsCapacity.append(mtdSolver.getCapacity())
                 self.resultsSingleCapacity.append(mtdSolver.getSingleCapacity())
@@ -604,10 +657,15 @@ class UserInterface():
                 mtdSchedMax = float(entriesExp['Movement Trigger (h) - MAX'].get())
                 mtdSchedStep = float(entriesExp['Movement Trigger (h) - Step'].get())
                 print("Experiment only MovTrigger")
+                
+                totalEvaluationsNeeded = int(round((mtdSchedMax-mtdSchedMin)/mtdSchedStep,0)) + 1
+                iterationPbar = 1; 
+
                 control = mtdSchedMin
                 while (control <= mtdSchedMax):
                     mtdSolver = TransientEvaluator(downtimePerMov, costPerMovement, control, timeForAtkSucPhase, evalTime, self.countEval)
-                    mtdSolver.run()
+                    mtdSolver.run(iterationPbar,totalEvaluationsNeeded)
+                    iterationPbar+=1;
                     self.resultsAvailability.append(mtdSolver.getAvailability())
                     self.resultsCapacity.append(mtdSolver.getCapacity())
                     self.resultsSingleCapacity.append(mtdSolver.getSingleCapacity())
@@ -628,10 +686,15 @@ class UserInterface():
                 atkDelayMax = float(entriesExp2['Time for attack success (h) - MAX'].get())
                 atkDelayStep = float(entriesExp2['Time for attack success (h) - Step'].get())
                 print("Experiment only Atk Suc Prob")
+
+                totalEvaluationsNeeded = int(round((atkDelayMax-atkDelayMin)/atkDelayStep,0)) + 1
+                iterationPbar = 1; 
+
                 control = atkDelayMin
                 while (control <= atkDelayMax):
                     mtdSolver = TransientEvaluator(downtimePerMov, costPerMovement, mtdSched, control, evalTime, self.countEval)
-                    mtdSolver.run()
+                    mtdSolver.run(iterationPbar,totalEvaluationsNeeded)
+                    iterationPbar+=1;
                     self.resultsAvailability.append(mtdSolver.getAvailability())
                     self.resultsCapacity.append(mtdSolver.getCapacity())
                     self.resultsSingleCapacity.append(mtdSolver.getSingleCapacity())
@@ -654,12 +717,18 @@ class UserInterface():
                 mtdSchedMax = float(entriesExp['Movement Trigger (h) - MAX'].get())
                 mtdSchedStep = float(entriesExp['Movement Trigger (h) - Step'].get())
                 print("Experiment AtkSucProb + MovTrigger")
+
+                totalEvaluationsNeeded = (int(round((atkDelayMax-atkDelayMin)/atkDelayStep,0)) + 1) * (int(round((mtdSchedMax-mtdSchedMin)/mtdSchedStep,0)) + 1)
+                iterationPbar = 1; 
+
+
                 control = atkDelayMin
                 while (control <= atkDelayMax):
                     control2 = mtdSchedMin
                     while (control2 <= mtdSchedMax):
                         mtdSolver = TransientEvaluator(downtimePerMov, costPerMovement, control2, control, evalTime, self.countEval)
-                        mtdSolver.run()
+                        mtdSolver.run(iterationPbar,totalEvaluationsNeeded)
+                        iterationPbar+=1;
                         self.resultsAvailability.append(mtdSolver.getAvailability())
                         self.resultsCapacity.append(mtdSolver.getCapacity())
                         self.resultsSingleCapacity.append(mtdSolver.getSingleCapacity())
@@ -682,16 +751,611 @@ class UserInterface():
         self.resultsSummary();
         self.finalPlot();
         
-            
-            
+    def showModern(self):
+
+
+        def on_closing():
+            self.rootModern.destroy()
+            self.rootModern.quit()
+
+
+        self.rootModern = ctk.CTk();
+        self.rootModern.protocol("WM_DELETE_WINDOW", on_closing)
+
+        self.rootModern.title("PyMTDEvaluator 2.0 (beta) - Modern")
+
+
+        self.downtimeLabel = ctk.CTkLabel(self.rootModern, text="Downtime per movement (min)")
+        self.downtimeLabel.grid(row=0, column=0, padx=20, pady=10, sticky="ew")
+        self.downtimeToolTip = ToolTip(self.downtimeLabel, msg="Minutes of system downtime due to each MTD movement.")
+        
+        self.downtimeVar = tk.StringVar(value="0")
+        self.downtimeEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", textvariable=self.downtimeVar)
+        self.downtimeEntry.grid(row=0, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+
+        self.costLabel = ctk.CTkLabel(self.rootModern, text="Cost per movement (S)")
+        self.costLabel.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
+        self.costToolTip = ToolTip(self.costLabel, msg="Monetary cost related to each MTD movement.")
+
+        self.costVar = tk.StringVar(value="0")
+        self.costEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", textvariable=self.costVar)
+        self.costEntry.grid(row=1, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+
+
+        self.triggerLabel = ctk.CTkLabel(self.rootModern, text="Movement trigger (h)")
+        self.triggerLabel.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+        self.triggerToolTip = ToolTip(self.triggerLabel, msg="Time (in hours) between MTD movements.")
+
+
+        self.triggerVar = tk.StringVar(value="0")
+        self.triggerEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", textvariable=self.triggerVar)
+        self.triggerEntry.grid(row=2, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+
+        self.timeAtkSucLabel = ctk.CTkLabel(self.rootModern, text="Time for attack success (h)")
+        self.timeAtkSucLabel.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
+        self.timeAtkSucToolTip = ToolTip(self.timeAtkSucLabel, msg="Expected time (in hours) for the attack to reach success in a system without MTD.")
+
+        self.timeAtkSucVar = tk.StringVar(value="0")
+        self.timeAtkSucEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", textvariable=self.timeAtkSucVar)
+        self.timeAtkSucEntry.grid(row=3, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+
+        self.evalTimeLabel = ctk.CTkLabel(self.rootModern, text="Evaluation time (h)")
+        self.evalTimeLabel.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
+        self.evalTimeToolTip = ToolTip(self.evalTimeLabel, msg="Target time (in hours) for the simulation environment. For example, evaluation time of 24 hours will produce simulation results for the first day of the system under attack.")
+
+        self.evalTimeVar = tk.StringVar(value="0")
+        self.evalTimeEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", textvariable=self.evalTimeVar)
+        self.evalTimeEntry.grid(row=4, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+
+       
+        # Movement Trigger experiment
+
+
+        def toggle_sectionMovExp():
+            if self.switchMovExpVar.get() == 1:
+                self.MovTriggerMinEntry.configure(state=ctk.NORMAL)
+                self.MovTriggerMinLabel.grid(row=6, column=0, padx=20, pady=10, sticky="ew")
+                self.MovTriggerMinEntry.grid(row=6, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+                self.MovTriggerMaxEntry.configure(state=ctk.NORMAL)
+                self.MovTriggerMaxLabel.grid(row=7, column=0, padx=20, pady=10, sticky="ew")
+                self.MovTriggerMaxEntry.grid(row=7, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+                self.MovTriggerStepEntry.configure(state=ctk.NORMAL)
+                self.MovTriggerStepLabel.grid(row=8, column=0, padx=20, pady=10, sticky="ew")
+                self.MovTriggerStepEntry.grid(row=8, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+
+                self.triggerLabel.grid_forget()
+                self.triggerEntry.grid_forget()
+                self.triggerEntry.configure(state=ctk.DISABLED)
+
+                self.flag = False;
+                
+            else:
+                self.MovTriggerMinEntry.configure(state=ctk.DISABLED)
+                self.MovTriggerMinLabel.grid_forget()
+                self.MovTriggerMinEntry.grid_forget()
+                self.MovTriggerMaxEntry.configure(state=ctk.DISABLED)
+                self.MovTriggerMaxLabel.grid_forget()
+                self.MovTriggerMaxEntry.grid_forget()
+                self.MovTriggerStepEntry.configure(state=ctk.DISABLED)
+                self.MovTriggerStepLabel.grid_forget()
+                self.MovTriggerStepEntry.grid_forget()
+
+                self.triggerLabel.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+                self.triggerEntry.grid(row=2, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+                self.triggerEntry.configure(state=ctk.NORMAL)
+
+                self.flag = True;
+
+
+        self.rootModern.grid_columnconfigure(0, weight=1)
+
+        self.switchMovExpVar = ctk.IntVar(value=0)
+        #self.switchMovExp =  ctk.CTkSwitch(self.rootModern, text="Movement Trigger Experiment", command=switcher(), variable=self.switchMovExpVar, onvalue=1, offvalue=0 )
+        
+
+        self.switchMovExp =  ctk.CTkSwitch(self.rootModern, text="Movement Trigger Experiment", command=toggle_sectionMovExp, 
+                                           variable=self.switchMovExpVar, onvalue=1, offvalue=0 )
+
+
+        self.switchMovExp.grid(row=5, column=0, columnspan=5, padx=20, pady=10, sticky="")
+
+        self.switchMovToolTip = ToolTip(self.switchMovExp, msg="Conduct a series of evaluations varying the Movement Trigger parameter.")
+
+
+        self.MovTriggerMinLabel = ctk.CTkLabel(self.rootModern, text="Movement Trigger (h) - Min")
+        #self.MovTriggerMinLabel.grid(row=6, column=0, padx=20, pady=10, sticky="ew")
+        self.MovTriggerMinTimeToolTip = ToolTip(self.MovTriggerMinLabel, msg="First value for Movement Trigger parameter")
+
+        self.MovTriggerMinVar = ctk.StringVar(value="0")
+        self.MovTriggerMinEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", state=ctk.DISABLED, textvariable=self.MovTriggerMinVar)
+        
+
+        self.MovTriggerMaxLabel = ctk.CTkLabel(self.rootModern, text="Movement Trigger (h) - Max")
+        self.MovTriggerMaxTimeToolTip = ToolTip(self.MovTriggerMaxLabel, msg="Last value for Movement Trigger parameter")
+
+        self.MovTriggerMaxVar = ctk.StringVar(value="0")
+        self.MovTriggerMaxEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", state=ctk.DISABLED, textvariable=self.MovTriggerMaxVar)
+
+
+        self.MovTriggerStepLabel = ctk.CTkLabel(self.rootModern, text="Movement Trigger (h) - Step")
+        self.MovTriggerStepToolTip = ToolTip(self.MovTriggerStepLabel, msg="Increment for the Movement Trigger parameter")
+
+        self.MovTriggerStepVar = ctk.StringVar(value="0")
+        self.MovTriggerStepEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", state=ctk.DISABLED, textvariable=self.MovTriggerStepVar)
+        
+        # Experiment time to attack success
+
+        def toggle_sectionTtasExp():
+            if self.switchTtasExpVar.get() == 1:
+                self.TtasMinEntry.configure(state=ctk.NORMAL)
+                self.TtasMinLabel.grid(row=10, column=0, padx=20, pady=10, sticky="ew")
+                self.TtasMinEntry.grid(row=10, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+                self.TtasMaxEntry.configure(state=ctk.NORMAL)
+                self.TtasMaxLabel.grid(row=11, column=0, padx=20, pady=10, sticky="ew")
+                self.TtasMaxEntry.grid(row=11, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+                self.TtasStepEntry.configure(state=ctk.NORMAL)
+                self.TtasStepLabel.grid(row=12, column=0, padx=20, pady=10, sticky="ew")
+                self.TtasStepEntry.grid(row=12, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+
+                self.timeAtkSucLabel.grid_forget()
+                self.timeAtkSucEntry.grid_forget()
+                self.timeAtkSucEntry.configure(state=ctk.DISABLED)
+
+                self.flag2 = False;
+
+
+                
+            else:
+                self.TtasMinEntry.configure(state=ctk.DISABLED)
+                self.TtasMinLabel.grid_forget()
+                self.TtasMinEntry.grid_forget()
+                self.TtasMaxEntry.configure(state=ctk.DISABLED)
+                self.TtasMaxLabel.grid_forget()
+                self.TtasMaxEntry.grid_forget()
+                self.TtasStepEntry.configure(state=ctk.DISABLED)
+                self.TtasStepLabel.grid_forget()
+                self.TtasStepEntry.grid_forget()
+
+                self.timeAtkSucLabel.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
+                self.timeAtkSucEntry.grid(row=3, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+                self.timeAtkSucEntry.configure(state=ctk.NORMAL)
+
+                self.flag2 = True;
+
+        self.switchTtasExpVar = ctk.IntVar(value=0)
+        self.switchTtasExp =  ctk.CTkSwitch(self.rootModern, text="Time for Attack Success Experiment", command=toggle_sectionTtasExp, 
+                                           variable=self.switchTtasExpVar, onvalue=1, offvalue=0 )
+
+
+        self.switchTtasExp.grid(row=9, column=0, columnspan=5, padx=20, pady=10, sticky="")
+
+        self.switchTtasToolTip = ToolTip(self.switchTtasExp, msg="Conduct a series of evaluations varying the Time for attack success parameter.")
+
+
+        self.TtasMinLabel = ctk.CTkLabel(self.rootModern, text="Time for attack success (h) - Min")
+        #self.TtasMinLabel.grid(row=6, column=0, padx=20, pady=10, sticky="ew")
+        self.TtasMinToolTip = ToolTip(self.TtasMinLabel, msg="First value for Time for attack success parameter")
+
+        self.TtasMinVar = ctk.StringVar(value="0")
+        self.TtasMinEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", state=ctk.DISABLED, textvariable=self.TtasMinVar)
+        
+
+        self.TtasMaxLabel = ctk.CTkLabel(self.rootModern, text="Time for attack success (h) - Max")
+        self.TtasMaxToolTip = ToolTip(self.TtasMaxLabel, msg="Last value for Time for attack success parameter")
+
+        self.TtasMaxVar = ctk.StringVar(value="0")
+        self.TtasMaxEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", state=ctk.DISABLED, textvariable=self.TtasMaxVar)
+
+
+        self.TtasStepLabel = ctk.CTkLabel(self.rootModern, text="Time for attack success (h) - Step")
+        self.TtasStepToolTip = ToolTip(self.TtasStepLabel, msg="Increment for the Time for attack success parameter")
+
+        self.TtasStepVar = ctk.StringVar(value="0")
+        self.TtasStepEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", state=ctk.DISABLED, textvariable=self.TtasStepVar)
+
+        ### MCDM 
+
+
+        def toggle_sectionMCDM():
+            if self.switchMCDMVar.get() == 1:
+                self.MCDMAvailabilityEntry.configure(state=ctk.NORMAL)
+                self.MCDMAvailabilityLabel.grid(row=14, column=0, padx=20, pady=10, sticky="ew")
+                self.MCDMAvailabilityEntry.grid(row=14, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+                self.MCDMPASEntry.configure(state=ctk.NORMAL)
+                self.MCDMPASLabel.grid(row=15, column=0, padx=20, pady=10, sticky="ew")
+                self.MCDMPASEntry.grid(row=15, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+                self.MCDMCapacityEntry.configure(state=ctk.NORMAL)
+                self.MCDMCapacityLabel.grid(row=16, column=0, padx=20, pady=10, sticky="ew")
+                self.MCDMCapacityEntry.grid(row=16, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+                self.MCDMCostEntry.configure(state=ctk.NORMAL)
+                self.MCDMCostLabel.grid(row=17, column=0, padx=20, pady=10, sticky="ew")
+                self.MCDMCostEntry.grid(row=17, column=1, columnspan=4, padx=20, pady=10, sticky="ew")
+
+                self.flagMCDM = True
+
+               
+            else:
+                self.MCDMAvailabilityEntry.configure(state=ctk.DISABLED)
+                self.MCDMAvailabilityLabel.grid_forget()
+                self.MCDMAvailabilityEntry.grid_forget()
+                self.MCDMPASEntry.configure(state=ctk.DISABLED)
+                self.MCDMPASLabel.grid_forget()
+                self.MCDMPASEntry.grid_forget()
+                self.MCDMCapacityEntry.configure(state=ctk.DISABLED)
+                self.MCDMCapacityLabel.grid_forget()
+                self.MCDMCapacityEntry.grid_forget()
+                self.MCDMCostEntry.configure(state=ctk.DISABLED)
+                self.MCDMCostLabel.grid_forget()
+                self.MCDMCostEntry.grid_forget()
+
+                self.flagMCDM = False
+
+        self.switchMCDMVar = ctk.IntVar(value=0)
+        self.switchMCDM =  ctk.CTkSwitch(self.rootModern, text="Multi Criteria Decision Making", command=toggle_sectionMCDM, 
+                                           variable=self.switchMCDMVar, onvalue=1, offvalue=0 )
+        self.switchMCDM.grid(row=13, column=0, columnspan=5, padx=20, pady=10, sticky="")
+
+        self.switchMCDMToolTip = ToolTip(self.switchMCDM, msg="Perform Multi Criteria Decision Making analysis. Below, enter the intented weight (in percentage) for each criteria. The sum of criteria weights should be equal to 100. **The method only works in evaluations with experiments**")
+
+        self.MCDMAvailabilityLabel = ctk.CTkLabel(self.rootModern, text="Availability (%)")
+        self.MCDMAvailabilityToolTip = ToolTip(self.MCDMAvailabilityLabel, msg="MCDM - Percentage weight for Availability criteria")
+
+        self.MCDMAvailabilityVar = ctk.StringVar(value="0")
+        self.MCDMAvailabilityEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", state=ctk.DISABLED, textvariable=self.MCDMAvailabilityVar)
+
+        self.MCDMPASLabel = ctk.CTkLabel(self.rootModern, text="Probability of Attack Success (%)")
+        self.MCDMPASToolTip = ToolTip(self.MCDMPASLabel, msg="MCDM - Percentage weight for Probability of Attack Success criteria")
+
+        self.MCDMPASVar = ctk.StringVar(value="0")
+        self.MCDMPASEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", state=ctk.DISABLED, textvariable=self.MCDMPASVar)
+
+        self.MCDMCapacityLabel = ctk.CTkLabel(self.rootModern, text="Capacity (%)")
+        self.MCDMCapacityToolTip = ToolTip(self.MCDMCapacityLabel, msg="MCDM - Percentage weight for Capacity criteria")
+
+        self.MCDMCapacityVar = ctk.StringVar(value="0")
+        self.MCDMCapacityEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", state=ctk.DISABLED, textvariable=self.MCDMCapacityVar)
+
+        self.MCDMCostLabel = ctk.CTkLabel(self.rootModern, text="Cost (%)")
+        self.MCDMCostToolTip = ToolTip(self.MCDMCostLabel, msg="MCDM - Percentage weight for Cost criteria")
+
+        self.MCDMCostVar = ctk.StringVar(value="0")
+        self.MCDMCostEntry = ctk.CTkEntry(self.rootModern, placeholder_text="0", state=ctk.DISABLED, textvariable=self.MCDMCostVar)
+
+        ## PDF report generation
+
+        #self.rootModern.grid_columnconfigure(0, weight=1)
+
+
+        self.pdfSelectionVar = ctk.StringVar(value="off")
+        self.pdfCheckBox = ctk.CTkCheckBox(self.rootModern, text="PDF report generation?", variable=self.pdfSelectionVar, onvalue="on", offvalue="off")
+        self.pdfCheckToolTip = ToolTip(self.pdfCheckBox, msg="Creates a PDF file containing the PyMTDEvaluator output")
+        self.pdfCheckBox.grid(row=18, column=0, columnspan=5, padx=20, pady=10, sticky="nsew")
+        self.pdfCheckBox.grid_columnconfigure(0, weight=1)
+
+        
+        self.generateSaveXMLButton = ctk.CTkButton(self.rootModern,
+                                         text="Save XML", command=(lambda :self.saveXML()))
+        self.generateSaveXMLButton.grid(row=19, column=0,
+                                        columnspan=1,
+                                        padx=20, pady=10,
+                                        sticky="ew")
+        
+        def loadXMLButtonClick():
+            self.showXML();
+            toggle_sectionMovExp();
+            toggle_sectionTtasExp();
+            toggle_sectionMCDM()
+
+        self.generateLoadXMLButton = ctk.CTkButton(self.rootModern,
+                                        text="Load XML", command=(lambda :loadXMLButtonClick()))
+        self.generateLoadXMLButton.grid(row=19, column=1,
+                                       columnspan=3,
+                                       padx=20, pady=10,
+                                       sticky="ew")
+        
+
+        self.generateResultsButton = ctk.CTkButton(self.rootModern,
+                                         text="Run", command=(lambda :self.runModern()))
+        self.generateResultsButton.grid(row=20, column=0,
+                                        columnspan=6,
+                                        padx=20, pady=10,
+                                        sticky="ew")
+        
+
+        # Show window
+
+        self.rootModern.mainloop() 
+
+
+    ## Function - modern
+    def runModern(self):
+        entsModern = {
+            'Downtime per movement (min)': self.downtimeVar,
+            'Cost per movement ($)': self.costVar,
+            'Movement Trigger (h)': self.triggerVar,
+            'Time for attack success (h)': self.timeAtkSucVar,
+            'Evaluation Time (h)': self.evalTimeVar
+            }
+        print(entsModern)
+        print("type "+ str(type(entsModern)))
+
+        entsModernExpMov = {
+            'Movement Trigger (h) - MIN': self.MovTriggerMinVar,
+            'Movement Trigger (h) - MAX': self.MovTriggerMaxVar,
+            'Movement Trigger (h) - Step': self.MovTriggerStepVar
+            }
+        print(entsModernExpMov)
+
+        entsModernExpTtas = {
+            'Time for attack success (h) - MIN': self.TtasMinVar,
+            'Time for attack success (h) - MAX': self.TtasMaxVar,
+            'Time for attack success (h) - Step': self.TtasStepVar
+            }
+        print(entsModernExpTtas)
+
+        entsModernMCDM = {
+            'Availability (%)': self.MCDMAvailabilityVar,
+            'Probability of attack success (%)': self.MCDMPASVar,
+            'Capacity (%)': self.MCDMCapacityVar,
+            'Cost (%)': self.MCDMCostVar
+            }
+        print(entsModernMCDM)
+
+        if self.pdfSelectionVar.get() == "on":
+            self.pdfFlag = True;
+        else:
+            self.pdfFlag = False;
+
+
+        self.runEvaluation(entsModern,entsModernExpMov,entsModernExpTtas,entsModernMCDM)
+
+
+    def selectInterface(self, selectionArg):
+        selection = int(selectionArg);
+        self.interfaceSelectionMain = selection;
+        self.interfaceSelection.destroy();
+
+    def getInterfaceSelection(self):
+        return self.interfaceSelectionMain;
+    
+    
+    def xmlVariablesConversion(self, dictXml):
+        print("Converting Variables")
+        print(dictXml)
+        if self.getInterfaceSelection() == 2:
+            downtimePerMovement = str(dictXml['downtimePerMovement'])
+            self.downtimeVar = ctk.StringVar(value=downtimePerMovement)
+            costPerMovement = str(dictXml['costPerMovement'])
+            self.costVar = ctk.StringVar(value=costPerMovement)
+            movementTrigger = str(dictXml['movementTrigger'])
+            self.triggerVar = ctk.StringVar(value=movementTrigger)
+            timeForAttackSuccess = str(dictXml['timeForAttackSuccess'])
+            self.timeAtkSucVar = ctk.StringVar(value=timeForAttackSuccess)
+            evaluationTime = str(dictXml['evaluationTime'])
+            self.evalTimeVar = ctk.StringVar(value=evaluationTime)
+            switchMovExp = int(dictXml['switchMovExp'])
+            self.switchMovExpVar = ctk.IntVar(value=switchMovExp)
+            if self.switchMovExpVar.get() == 1:
+                self.flag = False;
+            else:
+                self.flag = True;
+            movExpMin = str(dictXml['movExpMin'])
+            self.MovTriggerMinVar = ctk.StringVar(value=movExpMin)
+            movExpMax = str(dictXml['movExpMax'])
+            self.MovTriggerMaxVar = ctk.StringVar(value=movExpMax)
+            movExpStep = str(dictXml['movExpStep'])
+            self.MovTriggerStepVar = ctk.StringVar(value=movExpStep)
+            switchTtasExp = int(dictXml['switchTtasExp'])
+            self.switchTtasExpVar = ctk.IntVar(value=switchTtasExp)
+            if self.switchTtasExpVar.get() == 1:
+                self.flag2 = False;
+            else:
+                self.flag2 = True;
+            ttasExpMin = str(dictXml['ttasExpMin'])
+            self.TtasMinVar = ctk.StringVar(value=ttasExpMin)
+            ttasExpMax = str(dictXml['ttasExpMax'])
+            self.TtasMaxVar = ctk.StringVar(value=ttasExpMax)
+            ttasExpStep = str(dictXml['ttasExpStep'])
+            self.TtasStepVar = ctk.StringVar(value=ttasExpStep)
+            switchMCDMExp = int(dictXml['switchMCDMExp'])
+            self.switchMCDMVar = ctk.IntVar(value=switchMCDMExp)
+            if self.switchMCDMVar.get() == 1:
+                self.flagMCDM = True
+            else:
+                self.flagMCDM = False
+            mcdmAvailability = str(dictXml['MCDMAvailability'])
+            self.MCDMAvailabilityVar = ctk.StringVar(value=mcdmAvailability)
+            mcdmPAS = str(dictXml['MCDMPAS'])
+            self.MCDMPASVar = ctk.StringVar(value=mcdmPAS)
+            mcdmCapacity = str(dictXml['MCDMCapacity'])
+            self.MCDMCapacityVar = ctk.StringVar(value=mcdmCapacity)
+            mcdmCost = str(dictXml['MCDMCost'])
+            self.MCDMCostVar = ctk.StringVar(value=mcdmCost)
+            pdfSelectionXml = str(dictXml['pdfCheckBox'])
+            self.pdfSelectionVar = ctk.StringVar(value=pdfSelectionXml)
+        else:
+            downtimePerMovement = str(dictXml['downtimePerMovement'])
+            self.downtimeVar.set(downtimePerMovement)
+            costPerMovement = str(dictXml['costPerMovement'])
+            self.costVar.set(costPerMovement)
+            movementTrigger = str(dictXml['movementTrigger'])
+            self.triggerVar.set(movementTrigger)
+            timeForAttackSuccess = str(dictXml['timeForAttackSuccess'])
+            self.timeAtkSucVar.set(timeForAttackSuccess)
+            evaluationTime = str(dictXml['evaluationTime'])
+            self.evalTimeVar.set(evaluationTime)
+            switchMovExp = int(dictXml['switchMovExp'])
+            self.switchMovExpVar.set(switchMovExp)
+            if self.switchMovExpVar.get() == 1:
+                self.flag = False;
+            else:
+                self.flag = True;
+            movExpMin = str(dictXml['movExpMin'])
+            self.MovTriggerMinVar.set(movExpMin)
+            movExpMax = str(dictXml['movExpMax'])
+            self.MovTriggerMaxVar.set(movExpMax)
+            movExpStep = str(dictXml['movExpStep'])
+            self.MovTriggerStepVar.set(movExpStep)
+            switchTtasExp = int(dictXml['switchTtasExp'])
+            self.switchTtasExpVar.set(switchTtasExp)
+            if self.switchTtasExpVar.get() == 1:
+                self.flag2 = False;
+            else:
+                self.flag2 = True;
+            ttasExpMin = str(dictXml['ttasExpMin'])
+            self.TtasMinVar.set(ttasExpMin)
+            ttasExpMax = str(dictXml['ttasExpMax'])
+            self.TtasMaxVar.set(ttasExpMax)
+            ttasExpStep = str(dictXml['ttasExpStep'])
+            self.TtasStepVar.set(ttasExpStep)
+            switchMCDMExp = int(dictXml['switchMCDMExp'])
+            self.switchMCDMVar.set(switchMCDMExp)
+            if self.switchMCDMVar.get() == 1:
+                self.flagMCDM = True
+            else:
+                self.flagMCDM = False
+            mcdmAvailability = str(dictXml['MCDMAvailability'])
+            self.MCDMAvailabilityVar.set(mcdmAvailability)
+            mcdmPAS = str(dictXml['MCDMPAS'])
+            self.MCDMPASVar.set(mcdmPAS)
+            mcdmCapacity = str(dictXml['MCDMCapacity'])
+            self.MCDMCapacityVar.set(mcdmCapacity)
+            mcdmCost = str(dictXml['MCDMCost'])
+            self.MCDMCostVar.set(mcdmCost)
+            pdfSelectionXml = str(dictXml['pdfCheckBox'])
+            self.pdfSelectionVar.set(pdfSelectionXml)
+
+   
+    def showXML(self):
+         
+        def selectXmlFile():
+            filePath = filedialog.askopenfilename(filetypes=[('XML files', '*.xml')])
+            if filePath:
+                xmlData = xmlToDict(filePath)
+                self.xmlVariablesConversion(xmlData)
+                if self.getInterfaceSelection() == 2:
+                    self.runModern()
+                    selectXmlFile()
+                else:
+                    print("XML via Modern Interface")
+                    #pass
+
+        def xmlToDict(filePath):
+            try:
+                tree = ET.parse(filePath)
+                root = tree.getroot()
+                data = {}
+
+                for child in root:
+                    data[child.tag] = child.text
+
+                return data
+            except FileNotFoundError:
+                print(f"File not found: {filePath}")
+
+        rootXML = ctk.CTk()
+        rootXML.withdraw() 
+
+        selectXmlFile()
+
+    def saveXML(self):
+        xmlFields = {
+            'downtimePerMovement': self.downtimeVar.get(),
+            'costPerMovement': self.costVar.get(),
+            'movementTrigger': self.triggerVar.get(),
+            'timeForAttackSuccess': self.timeAtkSucVar.get(),
+            'evaluationTime': self.evalTimeVar.get(),
+            'switchMovExp': self.switchMovExpVar.get(),
+            'movExpMin': self.MovTriggerMinVar.get(),
+            'movExpMax': self.MovTriggerMaxVar.get(),
+            'movExpStep': self.MovTriggerStepVar.get(),
+            'switchTtasExp': self.switchTtasExpVar.get(),
+            'ttasExpMin': self.TtasMinVar.get(),
+            'ttasExpMax': self.TtasMaxVar.get(),
+            'ttasExpStep': self.TtasStepVar.get(),
+            'switchMCDMExp': self.switchMCDMVar.get(),
+            'MCDMAvailability': self.MCDMAvailabilityVar.get(),
+            'MCDMPAS': self.MCDMPASVar.get(),
+            'MCDMCapacity': self.MCDMCapacityVar.get(),
+            'MCDMCost': self.MCDMCostVar.get(),
+            'pdfCheckBox': self.pdfSelectionVar.get()
+            }
+        
+        root = ET.Element("variables")
+        for key, value in xmlFields.items():
+            child = ET.SubElement(root, key)
+            child.text = str(value)
+
+        file_path = filedialog.asksaveasfilename(defaultextension=".xml", filetypes=[("XML files", "*.xml")])
+        if file_path:
+            tree = ET.ElementTree(root)
+            tree.write(file_path, encoding='utf-8', xml_declaration=True, method='xml')
+
+
+    def interfaceSelection(self):
+
+        self.interfaceSelection = ctk.CTk()
+        self.interfaceSelection.title("PyMTDEvaluator 2.0 - Please select your preferred interface")   
+
+        self.selectionVar = tk.StringVar(value="0")
+ 
+
+        self.selectionLabel = ctk.CTkLabel(self.interfaceSelection, 
+                                    text="Interface")
+        self.selectionLabel.grid(row=0, column=0, 
+                              padx=20, pady=10,
+                              sticky="ew")
+
+
+
+        self.classicRadioButton = ctk.CTkRadioButton(self.interfaceSelection,
+                                  text="Classical",
+                                  variable=self.selectionVar,
+                                            value="0")
+        self.classicRadioButton.grid(row=0, column=1, padx=10,
+                                  pady=20, sticky="ew")
+ 
+        self.modernRadioButton = ctk.CTkRadioButton(self.interfaceSelection,
+                                      text="Modern",
+                                      variable=self.selectionVar,
+                                      value="1")
+        self.modernRadioButton.grid(row=0, column=2,
+                                    padx=20,
+                                    pady=10, sticky="ew")
+         
+        self.chatRadioButton = ctk.CTkRadioButton(self.interfaceSelection,
+                                    text="Upload XML file",
+                                    variable=self.selectionVar,
+                                            value="2")
+        self.chatRadioButton.grid(row=0, column=3,
+                                  padx=20, pady=10, 
+                                  sticky="ew")
+
+        
+
+        self.selectInterfaceButton = ctk.CTkButton(self.interfaceSelection,
+                                         text="Select", command=  lambda:  self.selectInterface(self.selectionVar.get()))
+        self.selectInterfaceButton.grid(row=1, column=0,
+                                        columnspan=5,
+                                        padx=20, pady=10,
+                                        sticky="ew")
+
+
+        self.interfaceSelection.mainloop() 
+
+
     def show(self):
         root = Tk()
-        root.title("PyMTDEvaluator v2.0")
+        
+        root.title("PyMTDEvaluator 2.0 - Classical")
         ents = self.makeform(root, self.fields)
         
         separator = ttk.Separator(root, orient='horizontal')
         separator.pack(side='top', fill='x')
         
+        
+      
+                
         def click():
             if checker.get() == 1:          
                 ents['Movement Trigger (h)'].config(state=DISABLED)
@@ -791,6 +1455,7 @@ class UserInterface():
         
         b1 = Button(root, text='Run', font=("Helvetica", 12), command=(lambda e=ents, e2=entsExp, e3=entsExp2, e4=entsExp3: self.runEvaluation(e,e2,e3,e4)))
         b1.pack(side='top', fill='x')
+        
         root.mainloop()
         
 class TransientEvaluator():
@@ -871,7 +1536,33 @@ class TransientEvaluator():
         self.contDown = 0
         self.sysAvailable = True
         
-        self.scenario = Scenario(0,0,0,0,0);
+        self.scenario = Scenario(0,0,0,0,0, self.timeForAtkPlot);
+
+        self.progressBarVariable = 0;
+        #self.pbar=tqdm(total=100)
+        self.pbar=0
+
+        #self.window = "window";
+        self.window = tk.Tk();
+        self.window.title("Tk Window");
+        self.window.withdraw();
+
+
+    def startProgressBar(self, _currentEval, _totalEval):
+
+        pbardesc = "Parameters: MovTrigger = "+ str(self.migTriggerPlot) + " AtkSucProb = " + str(self.timeForAtkPlot) + "\n Progress bar (" + str(_currentEval) + "/" + str(_totalEval) + ")"
+        self.pbar = tqdm(total=self.target, desc=pbardesc, leave=False)
+        self.progress_var = tk.DoubleVar()  # Track progress for Tkinter bar
+        self.progress_bar = ttk.Progressbar(self.window, maximum=self.target, mode="determinate", variable=self.progress_var)
+        self.progress_bar.pack()
+
+    def showProgressBar(self):
+        print("progress: " + str(self.pbar.n))  # Access current progress from pbar
+        self.pbar.update(1)
+        self.pbar.refresh()
+        self.progress_var.set(self.pbar.n)
+        self.window.update()  # Refresh Tkinter UI
+
 
 
     def meanConfidenceInterval(self, data, confidence=0.95):
@@ -1254,9 +1945,11 @@ class TransientEvaluator():
         
         
     
-    def run(self):
+    def run(self, currentEvaluation, totalEvaluation):
         
         
+        self.startProgressBar(currentEvaluation, totalEvaluation);
+
         for i in range(self.external):
             for x in range(self.internal):
                 random.seed(a=None, version=2)                  	
@@ -1542,11 +2235,17 @@ class TransientEvaluator():
             self.dataAvail2 = []
             
             progressMTD = round((j/self.target)*100) 
-            marksMTD = [0, 25, 50, 75]
-            if progressMTD in marksMTD:
-                print(str(progressMTD) +  "% ")
+            #marksMTD = [0, 25, 50, 75]
+            #if progressMTD in marksMTD:
+            print(str(progressMTD) +  "% ")
+            print("Scenario "+ str(self.countEvaluations) + " MTD Trigger :" + str(self.migTriggerPlot)  + " Time for attack success: " + str(self.timeForAtkPlot));
+            self.progressBarVariable = progressMTD;
+            self.showProgressBar();
+            time.sleep(0.1);
             
-            
+        time.sleep(0.1)
+        self.pbar.close()
+        self.window.destroy()
         
         print("100% ")
       
@@ -1579,14 +2278,37 @@ class TransientEvaluator():
                 
         
         meanC, cinC, cipC = self.meanConfidenceInterval(self.resultsCapacity, 0.95)
-        self.summary = self.summary + "\nSystem Capacity 95% CI (evaluation time) =  [" + str(round(cinC,2)) + ", " + str(round(meanC,2)) + ", " + str(round(cipC,2)) + "] %"
-        
+        self.summary = self.summary + "\nMean System Capacity 95% CI (during the evaluation time) =  [" + str(round(cinC,5)) + ", " + str(round(meanC,5)) + ", " + str(round(cipC,5)) + "] %"
+       
+               
         meanA, cinA, cipA = self.meanConfidenceInterval(self.resultsAvail, 0.95)
-        self.summary = self.summary + "\nSystem Availability 95% CI (evaluation time) =  [" + str(round(cinA,5)) + ", " + str(round(meanA,5)) + ", " + str(round(cipA,5)) + "] "
+        self.summary = self.summary + "\nMean System Availability 95% CI (during the evaluation time) =  [" + str(round(cinA,5)) + ", " + str(round(meanA,5)) + ", " + str(round(cipA,5)) + "] "
         #Verificar aqui - Downtime anual ? 
         #self.summary = self.summary + "\nDowntime 95% CI (evaluation time) =  [" + str(round(((1-cipA)*365*24*60),2)) + ", " + str(round(((1-meanA)*365*24*60),2)) + ", " + str(round(((1-cinA)*365*24*60),2)) + "] min"
+       
         
-        self.scenario = Scenario(self.migTriggerPlot, meanA, lastElement, meanC, lastElementPAS);
+        self.summary = self.summary + "\n ---------- \n Pointwise results \n ----------"
+
+        meanCLast = self.resultsCapacity[-1]
+        cinCLast = self.resultsCapacityCIN[-1]
+        cipCLast = self.resultsCapacityCIP[-1]
+               
+        self.summary = self.summary + "\nSystem Capacity 95% CI at " + str(self.target) + " h  [" + str(round(cinCLast,5)) + ", " + str(round(meanCLast,5)) + ", " + str(round(cipCLast,5)) + "] %"
+
+        meanALast = self.resultsAvail[-1]
+        cinALast = self.resultsAvailCIN[-1]
+        cipALast = self.resultsAvailCIP[-1]
+               
+        self.summary = self.summary + "\nSystem Availability 95% CI at " + str(self.target) + " h  [" + str(round(cinALast,5)) + ", " + str(round(meanALast,5)) + ", " + str(round(cipALast,5)) + "] "
+
+        meanPASLast = self.resultsAtkWOK[-1]
+        cinPASLast = self.resultsAtkWOKCIN[-1]
+        cipPASLast = self.resultsAtkWOKCIP[-1]
+       
+        self.summary = self.summary + "\nProbability of Attack Success 95% CI at " + str(self.target) + " h  [" + str(round(cinPASLast,5)) + ", " + str(round(meanPASLast,5)) + ", " + str(round(cipPASLast,5)) + "] "
+
+        
+        self.scenario = Scenario(self.migTriggerPlot, meanA, lastElement, meanC, lastElementPAS, self.timeForAtkPlot);
         #self.scenario.printScenario();
         
         self.singleRunEvaluation();
@@ -1730,9 +2452,14 @@ class SteadyStateEvaluator():
             
 if __name__ == '__main__':
     
-	mainW = UserInterface();
-	mainW.show();
-	
+    mainW = UserInterface()
+    mainW.interfaceSelection()
 
-	
-        
+    if mainW.getInterfaceSelection() == 0:
+        mainW.show();
+    elif mainW.getInterfaceSelection() == 1:
+        mainW.showModern();
+    else:
+        mainW.showXML();
+    
+    print('app end')
