@@ -29,7 +29,7 @@ PyMTDEvaluator docker container requires a XWindow server.
 
 **Installation Linux-specific**
 
-1. Download PyMTDEvaluator2-DockerImage.tar: Image available at: https://drive.google.com/file/d/1Qa7p5Z059ey4D0ApJX7RsHkUAAlH3TJZ/view?usp=sharing
+1. Download PyMTDEvaluator2-DockerImage.tar: Image available at: https://drive.google.com/file/d/1U1EerQ4aQ4Pg7dfqd7siO7q1rAgUPAEy/view?usp=sharing
 
 2. Loading PyMTDEvaluator image on your Docker platform
    
@@ -59,6 +59,10 @@ PyMTDEvaluator docker container requires a XWindow server.
  
  7. Inside the container
 	```
+	source .venv/bin/activate
+ 	```
+
+ 	```
 	python3 PyMTDEvaluator2.py
 	```
 
@@ -68,10 +72,10 @@ Remember that the generated files will be stored inside the container.
 
 
 **For results extraction:**
-
+sudo d
 	docker exec <container-ID> ./zipResults.sh
-. 
-	
+.
+
  	docker cp <container-ID>:/Results.zip .
 
 We recommend starting a new container for each round of evaluations. 
