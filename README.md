@@ -63,7 +63,7 @@ PyMTDEvaluator docker container requires a XWindow server.
  	```
 
  	```
-	python3 PyMTDEvaluator2.py
+	python3 PyMTDEvaluator2-beta.py 
 	```
 
 --NOTE
