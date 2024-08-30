@@ -32,15 +32,16 @@ Consists of a simple system dialog to feed the tool directly (i.e., without need
 
 We present the information for each field of PyMTDEvaluator below.
 
-`Downtime per movement (min)` - ...
+`Downtime per movement (min)` - Minutes of system downtime due to each MTD movement.
 
-`Cost per movement ($)` - ...
+`Cost per movement ($)` - Monetary cost related to each MTD movement.
 
-`Movement Trigger (h)` - ...
+`Movement Trigger (h)` - Time (in hours) between MTD movements.
 
-`Time for attack success (h)` - ...
+`Time for attack success (h)` - Expected time (in hours) for the attack to reach success in a system without MTD.
 
-`Evaluation time (h)` - ...
+`Evaluation time (h)` - Target time (in hours) for the simulation environment. For example, evaluation time of 24 hours will produce simulation results for the first day of the system under attack.
+
 
 ### Experiment
 
