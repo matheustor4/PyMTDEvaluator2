@@ -57,7 +57,7 @@ The user can run both experiments in the same PyMTDEvaluator run. In this scenar
 
 The Multi-Criteria Decision Making (MCDM) feature performs the comparison of the scenarios computed in a *Experiment* evaluation. It is possible to combine different scenarios in PyMTDEvaluator (i.e., merging results of multiple runs of the tool). However, **the MDCM only considers the current scenario, not the previous ones**. The "historical" MCDM is a intended feature for the upcoming version of the tool.
 
-In PyMTDEvaluator, the weights are measured in percentage. This way, the sum of the weights should be equal do 100. The weights represent the importance assigned to each metric. T
+In PyMTDEvaluator, the weights are measured in percentage. This way, the sum of the weights should be equal do 100. The weights represent the importance assigned to each metric. The goals are to maximize availability and capacity, and to minimize probability of attack success and cost. 
 
 ## Understanding PyMTDEvaluator output
 
@@ -72,6 +72,9 @@ PyMTDEvaluator Docker container has multiple example XML files for the user to t
 
 They are mainly based on the paramters presented in Table 1 of the document: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4777777.
 
+The main parameters are as follows
+
+
 | Parameter                       | Description                                                                  | Value                                                                      |
 | ------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | ``Movement Trigger``        | Time interval for MTD action                                                 | From 0.5 hours to 25.5 hours with a 5-hour step (using experiment feature) |
@@ -80,7 +83,7 @@ They are mainly based on the paramters presented in Table 1 of the document: htt
 | ``Cost per movement``       | Monetary cost per MTD action                                                 | 0.3 $                                                                      |
 | ``Evaluation time``         | Time target for the simulation run                                           | 48 hours                                                                   |
 
-The main parameters are as follows
+These parameters intend to illustrate a scenario of a system using Virtual Machine migration as MTD.
 
 ## Further information and bug reporting
 
