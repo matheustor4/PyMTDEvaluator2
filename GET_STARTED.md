@@ -66,9 +66,21 @@ An extensive explanation of PyMTDEvaluator can be found in Section 6 of the foll
 ### Progress bar
 ![image](https://github.com/user-attachments/assets/57944b10-9317-4d20-9b66-4e2965e888c7)
 
+## Illustrative case example
 
+PyMTDEvaluator Docker container has multiple example XML files for the user to test the tool. 
 
-## Illustrative case examples
+They are mainly based on the paramters presented in Table 1 of the document: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4777777.
+
+| Parameter                       | Description                                                                  | Value                                                                      |
+| ------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| ``Movement Trigger``        | Time interval for MTD action                                                 | From 0.5 hours to 25.5 hours with a 5-hour step (using experiment feature) |
+| ``Time for attack success`` | Expected time for the attacker to reach success if the system is without MTD | 24 hours                                                                   |
+| ``Downtime per movement``   | System downtime associated to each MTD action                                | 4 seconds                                                                  |
+| ``Cost per movement``       | Monetary cost per MTD action                                                 | 0.3 $                                                                      |
+| ``Evaluation time``         | Time target for the simulation run                                           | 48 hours                                                                   |
+
+The main parameters are as follows
 
 ## Further information and bug reporting
 
