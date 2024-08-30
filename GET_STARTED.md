@@ -57,9 +57,13 @@ The user can run both experiments in the same PyMTDEvaluator run. In this scenar
 
 The Multi-Criteria Decision Making (MCDM) feature performs the comparison of the scenarios computed in a *Experiment* evaluation. It is possible to combine different scenarios in PyMTDEvaluator (i.e., merging results of multiple runs of the tool). However, **the MDCM only considers the current scenario, not the previous ones**. The "historical" MCDM is a intended feature for the upcoming version of the tool.
 
-In PyMTDEvaluator, the weights are measured in percentage. This way, the sum of the weights should be equal do 100. The weights represent the importance assigned to each metric. 
+In PyMTDEvaluator, the weights are measured in percentage. This way, the sum of the weights should be equal do 100. The weights represent the importance assigned to each metric. T
 
 ## Understanding PyMTDEvaluator output
+
+
+### Progress bar
+![image](https://github.com/user-attachments/assets/72c4554f-3113-4371-a3c6-34daa656235f)
 
 
 
