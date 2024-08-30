@@ -64,7 +64,7 @@ In PyMTDEvaluator, the weights are measured in percentage. This way, the sum of 
 An extensive explanation of PyMTDEvaluator can be found in Section 6 of the following document: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4777777 
 
 ### Progress bar
-![image](https://github.com/user-attachments/assets/72c4554f-3113-4371-a3c6-34daa656235f)
+![image](https://github.com/user-attachments/assets/57944b10-9317-4d20-9b66-4e2965e888c7)
 
 
 
